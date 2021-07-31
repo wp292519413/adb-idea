@@ -3,6 +3,12 @@ ADB Idea
 
 A plugin for Android Studio and Intellij IDEA that speeds up your day to day android development.
 
+----
+fix bugs on 2021-07-31:
+1. uninitialized.application.id
+2. adapet to Android Studio Arctic Fox
+----
+
 The following commands are provided:
 
 * Uninstall App
