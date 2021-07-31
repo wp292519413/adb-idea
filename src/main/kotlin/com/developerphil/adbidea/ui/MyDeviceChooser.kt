@@ -18,7 +18,6 @@ package com.developerphil.adbidea.ui
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IDevice.HardwareFeature
-import com.android.sdklib.IAndroidTarget
 import com.android.tools.idea.run.ConnectedAndroidDevice
 import com.android.tools.idea.run.LaunchCompatibility
 import com.android.tools.idea.run.LaunchCompatibilityCheckerImpl
@@ -33,7 +32,6 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.table.JBTable
 import com.intellij.util.Alarm
-import com.intellij.util.ThreeState
 import com.intellij.util.containers.ContainerUtil
 import gnu.trove.TIntArrayList
 import org.jetbrains.android.dom.manifest.UsesFeature
@@ -56,17 +54,22 @@ import javax.swing.table.AbstractTableModel
  *
  * https://android.googlesource.com/platform/tools/adt/idea/+/refs/heads/mirror-goog-studio-master-dev/android/src/com/android/tools/idea/run/DeviceChooser.java
  */
-class MyDeviceChooser(multipleSelection: Boolean,
-                      okAction: Action,
-                      private val myFacet: AndroidFacet,
-                      private val myFilter: Condition<IDevice>?) : Disposable {
+class MyDeviceChooser(
+    multipleSelection: Boolean,
+    okAction: Action,
+    private val myFacet: AndroidFacet,
+    private val myFilter: Condition<IDevice>?
+) : Disposable {
     private val myListeners = ContainerUtil.createLockFreeCopyOnWriteList<DeviceChooserListener>()
     private val myRefreshingAlarm: Alarm
     private val myBridge: AndroidDebugBridge?
+
     @Volatile
     private var myProcessSelectionFlag = true
+
     /** The current list of devices that is displayed in the table.  */
     private var myDisplayedDevices = EMPTY_DEVICE_ARRAY
+
     /**
      * The current list of devices obtained from the debug bridge. This is updated in a background thread.
      * If it is different than [.myDisplayedDevices], then a [.refreshTable] invocation in the EDT thread
@@ -161,7 +164,8 @@ class MyDeviceChooser(multipleSelection: Boolean,
         }
         if (!Arrays.equals(myDisplayedDevices, devices)) {
             myDetectedDevicesRef.set(devices)
-            ApplicationManager.getApplication().invokeLater({ refreshTable() }, ModalityState.stateForComponent(myDeviceTable))
+            ApplicationManager.getApplication()
+                .invokeLater({ refreshTable() }, ModalityState.stateForComponent(myDeviceTable))
         }
     }
 
@@ -273,16 +277,16 @@ class MyDeviceChooser(multipleSelection: Boolean,
                 DEVICE_NAME_COLUMN_INDEX -> return generateDeviceName(device)
                 SERIAL_COLUMN_INDEX -> return device.serialNumber
                 DEVICE_STATE_COLUMN_INDEX -> return getDeviceState(device)
-                COMPATIBILITY_COLUMN_INDEX -> return LaunchCompatibilityCheckerImpl.create(myFacet, null, null).validate(ConnectedAndroidDevice(device, null))
+                COMPATIBILITY_COLUMN_INDEX -> return LaunchCompatibilityCheckerImpl.create(myFacet, null, null)?.validate(ConnectedAndroidDevice(device, null))
             }
             return null
         }
 
         private fun generateDeviceName(device: IDevice): String {
             return device.name
-                    .replace(device.serialNumber, "")
-                    .replace("[-_]".toRegex(), " ")
-                    .replace("[\\[\\]]".toRegex(), "")
+                .replace(device.serialNumber, "")
+                .replace("[-_]".toRegex(), " ")
+                .replace("[\\[\\]]".toRegex(), "")
         }
 
         override fun getColumnClass(columnIndex: Int): Class<*> {
@@ -298,22 +302,26 @@ class MyDeviceChooser(multipleSelection: Boolean,
     }
 
     private class LaunchCompatibilityRenderer : ColoredTableCellRenderer() {
-        override fun customizeCellRenderer(table: JTable, value: Any?, selected: Boolean, hasFocus: Boolean, row: Int, column: Int) {
-            if (value !is LaunchCompatibility) {
-                return
-            }
-            val compatibility = value
-            val compatible = compatibility.isCompatible
-            if (compatible == ThreeState.YES) {
+        override fun customizeCellRenderer(
+            table: JTable,
+            value: Any?,
+            selected: Boolean,
+            hasFocus: Boolean,
+            row: Int,
+            column: Int
+        ) {
+            val compatibility = value as? LaunchCompatibility ?: return
+            val state = compatibility.state
+            if (state == LaunchCompatibility.State.OK) {
                 append("Yes")
             } else {
-                if (compatible == ThreeState.NO) {
+                if (state == LaunchCompatibility.State.ERROR) {
                     append("No", SimpleTextAttributes.ERROR_ATTRIBUTES)
                 } else {
                     append("Maybe")
                 }
-                val reason = compatibility.reason
-                if (reason != null) {
+                val reason = compatibility.reason ?: ""
+                if (reason.isNotEmpty()) {
                     append(", ")
                     append(reason)
                 }
