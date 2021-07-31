@@ -4,7 +4,7 @@ ADB Idea
 A plugin for Android Studio and Intellij IDEA that speeds up your day to day android development.
 
 ----
-fix bugs on 2021-07-31:
+fix bugs on 2021-07-31 [download](https://github.com/wp292519413/adb-idea/blob/master/adb_idea.zip):
 1. uninitialized.application.id
 2. adapt to Android Studio Arctic Fox
 ----
